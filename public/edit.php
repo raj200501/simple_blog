@@ -1,29 +1,58 @@
 <?php
-require_once '../config/config.php';
-require_once '../src/Controller/PostController.php';
 
-$controller = new PostController($conn);
+declare(strict_types=1);
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $controller->update($_POST['id'], $_POST['title'], $_POST['content']);
+use SimpleBlog\Support\Html;
+
+$container = require __DIR__ . '/bootstrap.php';
+$postService = $container['postService'];
+
+$id = (int) ($_GET['id'] ?? 0);
+if ($id <= 0) {
     header('Location: index.php');
+    exit;
 }
 
-$post = $controller->edit($_GET['id']);
+$post = $postService->find($id);
 
-include '../templates/header.php';
+$errors = [];
+$title = $post['title'] ?? '';
+$content = $post['content'] ?? '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $title = (string) ($_POST['title'] ?? '');
+    $content = (string) ($_POST['content'] ?? '');
+
+    $result = $postService->update($id, $title, $content);
+    if ($result['success']) {
+        header('Location: view.php?id=' . $id);
+        exit;
+    }
+
+    $errors = $result['errors'];
+}
+
+include __DIR__ . '/../templates/header.php';
 ?>
 
 <h1>Edit Post</h1>
-<form method="post">
-    <input type="hidden" name="id" value="<?php echo $post['id']; ?>">
+<form method="post" class="form">
     <label for="title">Title</label>
-    <input type="text" id="title" name="title" value="<?php echo $post['title']; ?>" required>
-    <br>
+    <input type="text" id="title" name="title" value="<?= Html::escape($title); ?>" required>
+    <?php if (isset($errors['title'])): ?>
+        <p class="error"><?= Html::escape($errors['title']); ?></p>
+    <?php endif; ?>
+
     <label for="content">Content</label>
-    <textarea id="content" name="content" required><?php echo $post['content']; ?></textarea>
-    <br>
-    <button type="submit">Update</button>
+    <textarea id="content" name="content" rows="8" required><?= Html::escape($content); ?></textarea>
+    <?php if (isset($errors['content'])): ?>
+        <p class="error"><?= Html::escape($errors['content']); ?></p>
+    <?php endif; ?>
+
+    <div class="actions">
+        <button type="submit" class="button">Update</button>
+        <a href="view.php?id=<?= $id; ?>" class="button secondary">Cancel</a>
+    </div>
 </form>
 
-<?php include '../templates/footer.php'; ?>
+<?php include __DIR__ . '/../templates/footer.php'; ?>

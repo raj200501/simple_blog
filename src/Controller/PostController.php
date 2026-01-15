@@ -1,43 +1,54 @@
 <?php
-require_once '../src/Model/Post.php';
 
-class PostController
+declare(strict_types=1);
+
+namespace SimpleBlog\Controller;
+
+use PDO;
+use SimpleBlog\Model\Post;
+
+final class PostController
 {
-    private $conn;
-
-    public function __construct($conn)
+    public function __construct(private readonly PDO $conn)
     {
-        $this->conn = $conn;
     }
 
-    public function index()
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function index(): array
     {
         return Post::all($this->conn);
     }
 
-    public function create($title, $content)
+    public function create(string $title, string $content): void
     {
         Post::create($this->conn, $title, $content);
     }
 
-    public function edit($id)
+    /**
+     * @return array<string, mixed>
+     */
+    public function edit(int $id): array
     {
         return Post::find($this->conn, $id);
     }
 
-    public function update($id, $title, $content)
+    public function update(int $id, string $title, string $content): void
     {
         Post::update($this->conn, $id, $title, $content);
     }
 
-    public function delete($id)
+    public function delete(int $id): void
     {
         Post::delete($this->conn, $id);
     }
 
-    public function view($id)
+    /**
+     * @return array<string, mixed>
+     */
+    public function view(int $id): array
     {
         return Post::find($this->conn, $id);
     }
 }
-?>
